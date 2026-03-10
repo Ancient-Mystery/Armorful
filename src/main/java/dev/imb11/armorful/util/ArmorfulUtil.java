@@ -1,6 +1,5 @@
 package dev.imb11.armorful.util;
 
-import com.google.common.collect.Maps;
 import dev.imb11.armorful.Armorful;
 import dev.imb11.armorful.loot.ArmorfulLootTables;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -10,7 +9,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.Util;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -22,7 +20,6 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ArmorfulUtil {
     public static Identifier id(String id) {
@@ -39,30 +36,32 @@ public class ArmorfulUtil {
         return modelLayer;
     }
 
-    public static final Map<EquipmentSlot, Identifier> NATURAL_SPAWN_EQUIPMENT_SLOT_ITEMS = Util.make(Maps.newHashMap(),
-            (slotItems) -> {
-                slotItems.put(EquipmentSlot.HEAD, ArmorfulLootTables.NATURAL_SPAWN_HELMET);
-                slotItems.put(EquipmentSlot.CHEST, ArmorfulLootTables.NATURAL_SPAWN_CHEST);
-                slotItems.put(EquipmentSlot.LEGS, ArmorfulLootTables.NATURAL_SPAWN_LEGGINGS);
-                slotItems.put(EquipmentSlot.FEET, ArmorfulLootTables.NATURAL_SPAWN_FEET);
-            });
+    private static Identifier getNaturalSpawnTable(EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD  -> id("entities/natural_spawn/helmet");
+            case CHEST -> id("entities/natural_spawn/chestplate");
+            case LEGS  -> id("entities/natural_spawn/legs");
+            case FEET  -> id("entities/natural_spawn/feet");
+            default    -> null;
+        };
+    }
 
     public static List<ItemStack> getNaturalSpawnItemsFromLootTable(LivingEntity entity, EquipmentSlot slot) {
-        if (NATURAL_SPAWN_EQUIPMENT_SLOT_ITEMS.containsKey(slot)) {
-            LootTable loot = entity.level().getServer().reloadableRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, NATURAL_SPAWN_EQUIPMENT_SLOT_ITEMS.get(slot)));
-            LootParams lootParams = new LootParams.Builder((ServerLevel) entity.level())
-                    .withParameter(LootContextParams.THIS_ENTITY, entity)
-                    .withParameter(LootContextParams.ORIGIN, entity.position())
-                    .create(ArmorfulLootTables.SLOT);
-            List<ItemStack> items = new ArrayList<>();
-            loot.getRandomItems(lootParams, items::add);
-            return items;
-        }
-        return List.of();
+        Identifier tableId = getNaturalSpawnTable(slot);
+        if (tableId == null) return List.of();
+        var key = ResourceKey.create(Registries.LOOT_TABLE, tableId);
+        LootTable loot = entity.level().getServer().reloadableRegistries().getLootTable(key);
+        LootParams lootParams = new LootParams.Builder((ServerLevel) entity.level())
+                .withParameter(LootContextParams.THIS_ENTITY, entity)
+                .withParameter(LootContextParams.ORIGIN, entity.position())
+                .create(ArmorfulLootTables.SLOT);
+        List<ItemStack> items = new ArrayList<>();
+        loot.getRandomItems(lootParams, items::add);
+        return items;
     }
 
     public static void giveArmorNaturally(RandomSource random, LivingEntity entity, DifficultyInstance difficulty) {
-        if (random.nextFloat() < 0.24F /* * difficulty.getSpecialMultiplier() — закомментировано для теста */) {
+        if (random.nextFloat() < 0.24F) {
             float difficultyChance = entity.level().getDifficulty() == Difficulty.HARD ? 0.1F : 0.25F;
             boolean flag = true;
 
