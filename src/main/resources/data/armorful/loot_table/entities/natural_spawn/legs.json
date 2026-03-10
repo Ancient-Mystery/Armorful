@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {"type": "minecraft:item", "name": "minecraft:leather_leggings",   "weight": 3700},
+        {"type": "minecraft:item", "name": "minecraft:golden_leggings",    "weight": 4800},
+        {"type": "minecraft:item", "name": "minecraft:chainmail_leggings", "weight": 1290},
+        {"type": "minecraft:item", "name": "minecraft:iron_leggings",      "weight": 127},
+        {"type": "minecraft:item", "name": "minecraft:diamond_leggings",   "weight": 4}
+      ]
+    }
+  ]
+}

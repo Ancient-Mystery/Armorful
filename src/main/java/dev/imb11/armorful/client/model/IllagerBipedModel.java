@@ -1,8 +1,7 @@
 package dev.imb11.armorful.client.model;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import net.minecraft.client.model.*;
+import net.minecraft.client.model.AnimationUtils;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -10,23 +9,19 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.renderer.entity.state.IllagerRenderState;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.monster.AbstractIllager;
-import net.minecraft.world.item.ArmorItem;
-
-public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<T> {
+import net.minecraft.world.entity.monster.illager.AbstractIllager;
+public class IllagerBipedModel<S extends IllagerRenderState> extends HumanoidModel<S> {
     public ModelPart nose;
     public ModelPart jacket;
     public ModelPart arms;
 
     public IllagerBipedModel(ModelPart part) {
         super(part);
-
         this.jacket = this.body.getChild("jacket");
         this.nose = this.head.getChild("nose");
         this.arms = part.getChild("arms");
-
         this.hat.visible = false;
     }
 
@@ -81,16 +76,10 @@ public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<
     }
 
     @Override
-    protected Iterable<ModelPart> bodyParts() {
-        return Iterables.concat(super.bodyParts(), ImmutableList.of(this.arms, this.jacket));
-    }
+    public void setupAnim(S state) {
+        super.setupAnim(state);
 
-    @Override
-    public void setupAnim(T illagerEntity, float f, float g, float h, float i,
-                          float j) {
-        super.setupAnim(illagerEntity, f, g, h, i, j);
-
-        AbstractIllager.IllagerArmPose currentArmPose = illagerEntity.getArmPose();
+        AbstractIllager.IllagerArmPose currentArmPose = state.armPose;
         boolean isArmsCrossed = currentArmPose == AbstractIllager.IllagerArmPose.CROSSED;
 
         this.arms.visible = isArmsCrossed;
@@ -106,11 +95,11 @@ public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<
             this.rightArm.xRot = -0.75F;
         }
 
-        this.jacket.copyFrom(this.body);
+        this.jacket.loadPose(this.body.storePose());
 
-        boolean isWearingChestplateOrLeggings = illagerEntity.getItemBySlot(EquipmentSlot.CHEST)
-                .getItem() instanceof ArmorItem
-                || illagerEntity.getItemBySlot(EquipmentSlot.LEGS).getItem() instanceof ArmorItem;
+        boolean isWearingChestplateOrLeggings =
+                (state.chestEquipment != null && !state.chestEquipment.isEmpty())
+                || (state.legsEquipment != null && !state.legsEquipment.isEmpty());
 
         this.jacket.visible = !isWearingChestplateOrLeggings;
         this.arms.y = 3.0F;
@@ -119,10 +108,10 @@ public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<
 
         switch (currentArmPose) {
             case ATTACKING:
-                if (illagerEntity.getMainHandItem().isEmpty()) {
-                    AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, this.attackTime, h);
+                if (state.getMainHandItemStack() == null || state.getMainHandItemStack().isEmpty()) {
+                    AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, state);
                 } else {
-                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, illagerEntity, this.attackTime, h);
+                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, state.mainArm, state.attackAnim, 0);
                 }
                 break;
             case SPELLCASTING:
@@ -130,8 +119,8 @@ public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<
                 this.rightArm.x = -5.0F;
                 this.leftArm.z = 0.0F;
                 this.leftArm.x = 5.0F;
-                this.rightArm.xRot = Mth.cos(h * 0.6662F) * 0.25F;
-                this.leftArm.xRot = Mth.cos(h * 0.6662F) * 0.25F;
+                this.rightArm.xRot = Mth.cos(state.walkAnimationPos * 0.6662F) * 0.25F;
+                this.leftArm.xRot = Mth.cos(state.walkAnimationPos * 0.6662F) * 0.25F;
                 this.rightArm.zRot = 2.3561945F;
                 this.leftArm.zRot = -2.3561945F;
                 this.rightArm.yRot = 0.0F;
@@ -140,12 +129,12 @@ public class IllagerBipedModel<T extends AbstractIllager> extends HumanoidModel<
             case CELEBRATING:
                 this.rightArm.z = 0.0F;
                 this.rightArm.x = -5.0F;
-                this.rightArm.xRot = Mth.cos(h * 0.6662F) * 0.05F;
+                this.rightArm.xRot = Mth.cos(state.walkAnimationPos * 0.6662F) * 0.05F;
                 this.rightArm.zRot = 2.670354F;
                 this.rightArm.yRot = 0.0F;
                 this.leftArm.z = 0.0F;
                 this.leftArm.x = 5.0F;
-                this.leftArm.xRot = Mth.cos(h * 0.6662F) * 0.05F;
+                this.leftArm.xRot = Mth.cos(state.walkAnimationPos * 0.6662F) * 0.05F;
                 this.leftArm.zRot = -2.3561945F;
                 this.leftArm.yRot = 0.0F;
                 break;

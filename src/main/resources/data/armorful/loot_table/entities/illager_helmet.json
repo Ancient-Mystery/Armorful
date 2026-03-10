@@ -1,5 +1,5 @@
 {
-  "type": "armorful:slot",
+  "type": "minecraft:entity",
   "pools": [
     {
       "rolls": 1,

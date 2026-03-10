@@ -3,8 +3,8 @@ package dev.imb11.armorful.mixin.illagers;
 import dev.imb11.armorful.util.ArmorfulUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Vex;
@@ -22,7 +22,7 @@ public abstract class AbstractVexMixin extends Monster {
     }
 
     @Inject(method = "finalizeSpawn", at = @At("HEAD"), cancellable = false)
-    public void initializeArmor(ServerLevelAccessor serverLevelAccessor, DifficultyInstance difficultyInstance, MobSpawnType mobSpawnType, SpawnGroupData spawnGroupData, CallbackInfoReturnable<SpawnGroupData> cir) {
+    public void initializeArmor(ServerLevelAccessor serverLevelAccessor, DifficultyInstance difficultyInstance, EntitySpawnReason entitySpawnReason, SpawnGroupData spawnGroupData, CallbackInfoReturnable<SpawnGroupData> cir) {
         if(serverLevelAccessor instanceof ServerLevel) {
             ArmorfulUtil.giveArmorNaturally(this.random, this, difficultyInstance);
         }

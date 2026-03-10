@@ -25,8 +25,8 @@ public record RaidWaveCondition(int wave) implements LootItemCondition {
 
     @Override
     public boolean test(LootContext lootContext) {
-        Raider raider = (Raider) lootContext.getParamOrNull(LootContextParams.THIS_ENTITY);
-        assert raider != null;
+        var entity = lootContext.getOptionalParameter(LootContextParams.THIS_ENTITY);
+        if (!(entity instanceof Raider raider)) return false;
         return Objects.requireNonNull(raider.getCurrentRaid()).getGroupsSpawned() == wave;
     }
 }

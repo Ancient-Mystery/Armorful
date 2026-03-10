@@ -1,54 +1,83 @@
 package dev.imb11.armorful.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.imb11.armorful.client.model.IllagerBipedModel;
 import dev.imb11.armorful.util.ArmorfulUtil;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.IllusionerRenderState;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.monster.Illusioner;
+import net.minecraft.world.entity.monster.illager.Illusioner;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-public class IllusionerBipedRenderer extends IllagerBipedRenderer<Illusioner> {
-    private static final ResourceLocation PILLAGER = ArmorfulUtil.defaultID("textures/entity/illager/illusioner.png");
+import java.util.Arrays;
 
-    public IllusionerBipedRenderer(Context builder) {
-        super(builder);
-        this.addLayer(new ItemInHandLayer<>(this, builder.getItemInHandRenderer()) {
+public class IllusionerBipedRenderer extends IllagerBipedRenderer<Illusioner, IllusionerRenderState> {
+    private static final Identifier TEXTURE = ArmorfulUtil.defaultID("textures/entity/illager/illusioner.png");
+
+    public IllusionerBipedRenderer(Context context) {
+        super(context);
+        this.addLayer(new ItemInHandLayer<IllusionerRenderState, IllagerBipedModel<IllusionerRenderState>>(this) {
             @Override
-            public void render(PoseStack matrixStack, MultiBufferSource vertexConsumerProvider, int i, Illusioner illusionerEntity, float f, float g, float h, float j, float k, float l) {
-                if (illusionerEntity.isAggressive() || illusionerEntity.isCastingSpell()) {
-                    super.render(matrixStack, vertexConsumerProvider, i, illusionerEntity, f, g, h, j, k, l);
+            public void submit(PoseStack poseStack, SubmitNodeCollector collector, int light,
+                               IllusionerRenderState state, float partialTick, float bob) {
+                if (state.isCastingSpell || state.isAggressive) {
+                    super.submit(poseStack, collector, light, state, partialTick, bob);
                 }
             }
         });
     }
 
     @Override
-    public void render(Illusioner entity, float entityYaw, float partialTicks, PoseStack matrices,
-                       MultiBufferSource vertexProvider, int light) {
-        if (entity.isInvisible()) {
-            Vec3[] avec3 = entity.getIllusionOffsets(partialTicks);
-            float f = this.getBob(entity, partialTicks);
-
-            for (int i = 0; i < avec3.length; ++i) {
-                matrices.pushPose();
-                matrices.translate(avec3[i].x + (double) Mth.cos((float) i + f * 0.5F) * 0.025D,
-                        avec3[i].y + (double) Mth.cos((float) i + f * 0.75F) * 0.0125D,
-                        avec3[i].z + (double) Mth.cos((float) i + f * 0.7F) * 0.025D);
-                super.render(entity, entityYaw, partialTicks, matrices, vertexProvider, light);
-                matrices.popPose();
+    public void submit(IllusionerRenderState state, PoseStack poseStack,
+                       SubmitNodeCollector collector, CameraRenderState cameraRenderState) {
+        if (state.isInvisible) {
+            Vec3[] offsets = state.illusionOffsets;
+            for (int i = 0; i < offsets.length; i++) {
+                poseStack.pushPose();
+                poseStack.translate(
+                        offsets[i].x + Mth.cos((float) i + state.ageInTicks * 0.5F) * 0.025,
+                        offsets[i].y + Mth.cos((float) i + state.ageInTicks * 0.75F) * 0.0125,
+                        offsets[i].z + Mth.cos((float) i + state.ageInTicks * 0.7F) * 0.025
+                );
+                super.submit(state, poseStack, collector, cameraRenderState);
+                poseStack.popPose();
             }
         } else {
-            super.render(entity, entityYaw, partialTicks, matrices, vertexProvider, light);
+            super.submit(state, poseStack, collector, cameraRenderState);
         }
-
     }
 
     @Override
-    public @NotNull ResourceLocation getTextureLocation(Illusioner entity) {
-        return PILLAGER;
+    protected boolean isBodyVisible(IllusionerRenderState state) {
+        return true;
+    }
+
+    @Override
+    protected AABB getBoundingBoxForCulling(Illusioner entity) {
+        return super.getBoundingBoxForCulling(entity).inflate(3.0, 0.0, 3.0);
+    }
+
+    @Override
+    public IllusionerRenderState createRenderState() {
+        return new IllusionerRenderState();
+    }
+
+    @Override
+    public void extractRenderState(Illusioner entity, IllusionerRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        Vec3[] offsets = entity.getIllusionOffsets(partialTick);
+        state.illusionOffsets = Arrays.copyOf(offsets, offsets.length);
+        state.isCastingSpell = entity.isCastingSpell();
+    }
+
+    @Override
+    public @NotNull Identifier getTextureLocation(IllusionerRenderState state) {
+        return TEXTURE;
     }
 }
