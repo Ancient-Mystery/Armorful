@@ -107,6 +107,12 @@ public class IllagerBipedModel<S extends IllagerRenderState> extends HumanoidMod
         this.arms.xRot = -0.75F;
 
         switch (currentArmPose) {
+            case CROSSBOW_HOLD:
+                AnimationUtils.animateCrossbowHold(this.rightArm, this.leftArm, this.head, true);
+                break;
+            case CROSSBOW_CHARGE:
+                AnimationUtils.animateCrossbowCharge(this.rightArm, this.leftArm, (float) state.maxCrossbowChargeDuration, state.ticksUsingItem, true);
+                break;
             case ATTACKING:
                 if (state.getMainHandItemStack() == null || state.getMainHandItemStack().isEmpty()) {
                     AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, state);
